@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+env.sh
+*.log
+.DS_Store
+coverage/
+temp_*
+*.tmp
