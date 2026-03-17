@@ -6,6 +6,11 @@ so that you can use the PDF in Prompt Builder or for other purposes).
 
 Vibe coded and not reviewed. Use at your own risk.
 
+## TODOs:
+
+- [ ] Add Dockerfile (with a docker file that contains nodejs and LibreOffice)
+- [ ] Deploy to Heroku or similar service
+
 ## Overview
 
 This service:
