@@ -1,6 +1,10 @@
 # Salesforce Document Conversion Service
 
-A TypeScript-based service that listens to Salesforce platform events and converts documents using LibreOffice.
+A TypeScript-based service that listens to Salesforce platform events containing Content Version Ids
+and converts the corresponding files using LibreOffice (e.g., convert an Excel file * .xlsx to PDF,
+so that you can use the PDF in Prompt Builder or for other purposes).
+
+Vibe coded and not reviewed. Use at your own risk.
 
 ## Overview
 
