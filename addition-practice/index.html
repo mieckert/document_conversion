@@ -158,8 +158,8 @@
     <h1>Addition Practice</h1>
     <div class="progress" id="progress" aria-label="Correct answer streak"></div>
     <div class="expression" id="expression">-- + --</div>
-    <form id="answer-form" autocomplete="off">
-      <input type="number" id="answer" inputmode="numeric" aria-label="Your answer" required>
+    <form id="answer-form" autocomplete="off" novalidate>
+      <input type="number" id="answer" inputmode="numeric" aria-label="Your answer">
       <button type="submit">Check</button>
     </form>
     <div class="feedback" id="feedback"></div>
@@ -234,7 +234,19 @@
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     const value = answerInput.value.trim();
-    if (value === '') return;
+
+    // A number input can look "filled in" (e.g. "+32") while its .value is
+    // actually empty, because the browser rejects characters like "+" as an
+    // invalid number. Without this check, pressing Check would silently do
+    // nothing. Always give visible feedback instead.
+    if (value === '') {
+      feedbackEl.textContent = answerInput.validity.badInput
+        ? 'Please type only digits, like 42.'
+        : 'Type your answer first!';
+      feedbackEl.className = 'feedback wrong';
+      answerInput.focus();
+      return;
+    }
 
     const userAnswer = Number(value);
     const correctAnswer = currentA + currentB;
