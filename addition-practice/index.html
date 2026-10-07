@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Addition Practice</title>
+<style>
+  :root {
+    --bg: #fef9e7;
+    --card: #ffffff;
+    --accent: #ff8fab;
+    --accent-dark: #e0557a;
+    --correct: #4caf50;
+    --wrong: #e74c3c;
+    --text: #333;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #fef9e7, #d4f1f4);
+    font-family: "Comic Sans MS", "Trebuchet MS", Verdana, sans-serif;
+    color: var(--text);
+    overflow: hidden;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 40px 50px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    text-align: center;
+    max-width: 420px;
+    width: 90%;
+    position: relative;
+  }
+  h1 {
+    margin-top: 0;
+    color: var(--accent-dark);
+    font-size: 1.8rem;
+  }
+  .progress {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ddd;
+    transition: background 0.3s, transform 0.3s;
+  }
+  .dot.filled {
+    background: var(--accent);
+    transform: scale(1.2);
+  }
+  .expression {
+    font-size: 3rem;
+    font-weight: bold;
+    margin: 20px 0;
+    letter-spacing: 2px;
+  }
+  form {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 15px;
+  }
+  input[type="number"] {
+    width: 120px;
+    font-size: 2rem;
+    text-align: center;
+    padding: 8px;
+    border: 3px solid var(--accent);
+    border-radius: 12px;
+    outline: none;
+  }
+  input[type="number"]:focus {
+    border-color: var(--accent-dark);
+  }
+  button {
+    font-size: 1.3rem;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 12px;
+    background: var(--accent);
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  button:hover { background: var(--accent-dark); }
+  button:active { transform: scale(0.95); }
+  .feedback {
+    min-height: 2.2rem;
+    font-size: 1.4rem;
+    font-weight: bold;
+  }
+  .feedback.correct { color: var(--correct); }
+  .feedback.wrong { color: var(--wrong); }
+  .score {
+    margin-top: 10px;
+    font-size: 1rem;
+    color: #777;
+  }
+
+  /* Bunny reward overlay */
+  #bunny-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.9);
+    display: none;
+    align-items: center;
+    justify-content: flex-end;
+    flex-direction: column;
+    z-index: 10;
+  }
+  #bunny-overlay.show { display: flex; }
+  .bunny-message {
+    font-size: 2rem;
+    color: var(--accent-dark);
+    margin-bottom: 10px;
+    text-align: center;
+    font-weight: bold;
+  }
+  .bunny-track {
+    position: relative;
+    width: 100%;
+    height: 140px;
+    overflow: hidden;
+  }
+  .bunny {
+    position: absolute;
+    bottom: 10px;
+    left: -120px;
+    font-size: 80px;
+    animation: hop-across 2.6s linear forwards;
+  }
+  @keyframes hop-across {
+    0%   { left: -120px; transform: translateY(0) scaleX(1); }
+    10%  { transform: translateY(-40px) scaleX(1); }
+    20%  { transform: translateY(0) scaleX(1); }
+    30%  { transform: translateY(-40px) scaleX(1); }
+    40%  { transform: translateY(0) scaleX(1); }
+    50%  { transform: translateY(-40px) scaleX(1); }
+    60%  { transform: translateY(0) scaleX(1); }
+    70%  { transform: translateY(-40px) scaleX(1); }
+    80%  { transform: translateY(0) scaleX(1); }
+    100% { left: 100%; transform: translateY(0) scaleX(1); }
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Addition Practice</h1>
+    <div class="progress" id="progress" aria-label="Correct answer streak"></div>
+    <div class="expression" id="expression">-- + --</div>
+    <form id="answer-form" autocomplete="off" novalidate>
+      <input type="number" id="answer" inputmode="numeric" aria-label="Your answer">
+      <button type="submit">Check</button>
+    </form>
+    <div class="feedback" id="feedback"></div>
+    <div class="score" id="score">Correct answers: 0</div>
+  </div>
+
+  <div id="bunny-overlay">
+    <div class="bunny-message">Great job! 5 in a row! 🎉</div>
+    <div class="bunny-track">
+      <div class="bunny">🐰</div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  const STREAK_GOAL = 5;
+
+  const expressionEl = document.getElementById('expression');
+  const form = document.getElementById('answer-form');
+  const answerInput = document.getElementById('answer');
+  const feedbackEl = document.getElementById('feedback');
+  const scoreEl = document.getElementById('score');
+  const progressEl = document.getElementById('progress');
+  const bunnyOverlay = document.getElementById('bunny-overlay');
+
+  let currentA = 0;
+  let currentB = 0;
+  let streak = 0;
+  let totalCorrect = 0;
+
+  function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  // Generates two numbers below 100 whose sum also stays below 100,
+  // which keeps the exercise appropriate for the "under 100" practice goal.
+  function newQuestion() {
+    currentA = randomInt(1, 97);
+    currentB = randomInt(1, 99 - currentA);
+    expressionEl.textContent = `${currentA} + ${currentB}`;
+    answerInput.value = '';
+    feedbackEl.textContent = '';
+    feedbackEl.className = 'feedback';
+    answerInput.focus();
+  }
+
+  function renderProgress() {
+    progressEl.innerHTML = '';
+    for (let i = 0; i < STREAK_GOAL; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'dot' + (i < streak ? ' filled' : '');
+      progressEl.appendChild(dot);
+    }
+  }
+
+  function showBunnyReward() {
+    bunnyOverlay.classList.add('show');
+    // Restart the hop animation each time it is shown.
+    const bunny = bunnyOverlay.querySelector('.bunny');
+    bunny.style.animation = 'none';
+    void bunny.offsetWidth; // force reflow
+    bunny.style.animation = '';
+
+    setTimeout(() => {
+      bunnyOverlay.classList.remove('show');
+      streak = 0;
+      renderProgress();
+      newQuestion();
+    }, 2800);
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const value = answerInput.value.trim();
+
+    // A number input can look "filled in" (e.g. "+32") while its .value is
+    // actually empty, because the browser rejects characters like "+" as an
+    // invalid number. Without this check, pressing Check would silently do
+    // nothing. Always give visible feedback instead.
+    if (value === '') {
+      feedbackEl.textContent = answerInput.validity.badInput
+        ? 'Please type only digits, like 42.'
+        : 'Type your answer first!';
+      feedbackEl.className = 'feedback wrong';
+      answerInput.focus();
+      return;
+    }
+
+    const userAnswer = Number(value);
+    const correctAnswer = currentA + currentB;
+
+    if (userAnswer === correctAnswer) {
+      streak++;
+      totalCorrect++;
+      feedbackEl.textContent = 'Correct! 🎉';
+      feedbackEl.className = 'feedback correct';
+      scoreEl.textContent = `Correct answers: ${totalCorrect}`;
+      renderProgress();
+
+      if (streak >= STREAK_GOAL) {
+        setTimeout(showBunnyReward, 500);
+      } else {
+        setTimeout(newQuestion, 700);
+      }
+    } else {
+      feedbackEl.textContent = `Not quite, try again!`;
+      feedbackEl.className = 'feedback wrong';
+      answerInput.value = '';
+      answerInput.focus();
+    }
+  });
+
+  renderProgress();
+  newQuestion();
+})();
+</script>
+</body>
+</html>
